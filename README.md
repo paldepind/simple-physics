@@ -1,7 +1,7 @@
 # Simple physics simulator
 
 This is a simple physics simulator written in JavaScript. It is based on Verlet integration and simple vector geometry.
-It is capable of handling collision between circles and lines, simple constraint solving with distance between points
+It is capable of handling collisions between circles and lines, simple constraint solving with distance between points
 (somewhat simulating springs, physically incorrect though).
 
 The simulator is heavily based on the paper Advanced Character Physics by Thomas Jakobsen.
@@ -14,3 +14,4 @@ RequireJS is utilized for organizing the code into flexible modules.
 * Implement bezier curves instead of just straight lines
 * The physics still needs some tweaking.
 * Make the viewport follow the bike
+* Add ability to rotate the bike and smooth acceleration
