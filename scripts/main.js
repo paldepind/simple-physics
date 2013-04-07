@@ -37,7 +37,7 @@ document.onkeyup = function(ev) {
 // Handle mouse input
 var mouse = {
     clicked: false,
-    pos: vector()
+    pos: vector(),
 };
 
 document.onmousedown = function(ev) {

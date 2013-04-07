@@ -38,8 +38,12 @@ function (vector, physics, render, lines) {
                 circle.integrate();
                 if (that.breaking) circle.rotationSpeed = 0;
                 circle.detectCollisions(lines, function(nearestPointOnLine) {
-                    var offset = circle.project(nearestPointOnLine);
-                    circle.rotate(offset);
+                    var offset = circle.projectOut(nearestPointOnLine);
+                    if (that.breaking) {
+                        circle.rotate(offset, 0);
+                    } else {
+                        circle.rotate(offset);
+                    }
                 });
             });
             

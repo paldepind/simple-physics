@@ -5,7 +5,6 @@ function(vector, Thing, render) {
             var prototype = {
                 point: vector(),
                 pointVec: vector(),
-                normalizedProjection: 0,
                 
                 init: function(x1, y1, x2, y2) {
                     this.p1 = vector(x1, y1);
@@ -17,14 +16,14 @@ function(vector, Thing, render) {
                 
                 nearestPoint: function(pos) {
                     this.pointVec.setVec(pos).sub(this.p1);
-                    this.normalizedProjection = this.pointVec.dot(this.piece);
-                    if (this.normalizedProjection < 0) {
+                    normalizedProjection = this.pointVec.dot(this.piece);
+                    if (normalizedProjection < 0) {
                         return this.p1;
-                    } else if (this.normalizedProjection > this.sqrLength) {
+                    } else if (normalizedProjection > this.sqrLength) {
                         return this.p2;
                     } else { // Projection is on line
                         this.point.setVec(this.piece)
-                                  .scale(this.normalizedProjection / this.sqrLength)
+                                  .scale(normalizedProjection / this.sqrLength)
                                   .add(this.p1);
                         return this.point;
                     }
@@ -42,7 +41,6 @@ function(vector, Thing, render) {
                 rotation: 0,
                 rotationSpeed: 0,
                 pointToPos: vector(),
-                count: 0,
                 
                 init: function(radius, x, y, px, py) {
                     this.radius = radius;
@@ -66,27 +64,30 @@ function(vector, Thing, render) {
                 rotate: (function () {
                     var deltaPos = vector();
                     var projection = vector();
+                    var clockwise = vector();
                     
-                    return function(offset, rotate) {
-                        var clockwise = vector();
-                        var rotationDiff, force;
+                    return function(offset, stiffness) {
+                        stiffness = stiffness || 0.5;
+                        var rotationDiff, projLength;
+                        
+                        clockwise.set(offset.y, -offset.x); // Hat
+                        clockwise.normalize();
                         
                         deltaPos.setVec(this.prevpos).sub(this.pos);
-                        clockwise.set(offset.y, -offset.x);
-                        clockwise.scale(1 / clockwise.length()); //FIXME MAYBE
-                        
-                        force = Math.abs(deltaPos.dot(clockwise));
+
                         projection.setVec(clockwise)
                                   .scale(deltaPos.dot(clockwise));
                                   
                         if (clockwise.dot(projection) <= 0) {
-                            force *= -1;
+                            projLength = -projection.length();
+                        } else {
+                            projLength = projection.length();
                         }
                         
-                        rotationDiff = force-this.rotationSpeed;
-                        
-                        this.rotationSpeed += rotationDiff;
+                        rotationDiff = projLength - this.rotationSpeed;
                         this.pos.add(clockwise.scale(rotationDiff));
+                         
+                        this.rotationSpeed += rotationDiff * stiffness;
                     };
                 }()),
                 
@@ -99,19 +100,17 @@ function(vector, Thing, render) {
                         
                         lines.forEach(function (line) {
                             nearestPointOnLine = line.nearestPoint(that.pos);
-                            
                             pointToPos.setVec(that.pos).sub(nearestPointOnLine);    
                             
                             if (pointToPos.lengthSquared() < that.radiusSquared) {
-                                // We have a collision
                                 onCollisionCallback(pointToPos);
                             }
                         });
-                        lines.reverse();
+                        lines.reverse(); //FIXME
                     };
                 }()),
                 
-                project: (function () {
+                projectOut: (function () {
                     var offset = vector();
                     
                     return function(pointToPos) {
@@ -133,7 +132,6 @@ function(vector, Thing, render) {
         constraint: (function () {
             var prototype = {
                 distVec: vector(),
-                offset: vector(),
                 
                 init: function(w1, w2, distance) {
                     this.v1 = w1.pos;
@@ -142,15 +140,14 @@ function(vector, Thing, render) {
                 },
                 
                 solve: function() {
-                    var ratio;
                     this.distVec.setVec(this.v2).sub(this.v1);
                     var curDist = this.distVec.length();
                     
                     if (this.curDist != this.dist) {
-                        ratio = (1 - curDist/this.dist) / 2;
-                        this.offset.setVec(this.distVec).scale(ratio*0.08);
-                        this.v1.sub(this.offset);
-                        this.v2.add(this.offset);
+                        var ratio = (1 - curDist/this.dist) / 2;
+                        this.distVec.scale(ratio*0.04);
+                        this.v1.sub(this.distVec);
+                        this.v2.add(this.distVec);
                     }
                 }
             };
